@@ -15,12 +15,16 @@ import { verify } from "argon2";
 import { resolve } from "path";
 import { rejects } from "assert";
 import { ConfigService } from "@nestjs/config";
+import { ProviderService } from "./provider/provider.service";
+import { PrismaService } from "@/prisma/prisma.service";
 
 @Injectable()
 export class AuthService {
   public constructor(
+    private readonly prismaService: PrismaService,
     private readonly userService: UserService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly providerService: ProviderService
   ) {}
 
   public async register(req: Request, dto: RegisterDto) {
@@ -41,6 +45,52 @@ export class AuthService {
     );
 
     return this.saveSession(req, newUser);
+  }
+
+  public async extractProfileFromCode(
+    req: Request,
+    provider: string,
+    code: string
+  ) {
+    const providerInstance = this.providerService.findByService(provider);
+    const profile = await providerInstance.findUserByCode(code);
+
+    const account = await this.prismaService.account.findFirst({
+      where: {
+        id: profile.id,
+        provider: profile.provider,
+      },
+    });
+
+    let user = account?.userId
+      ? await this.userService.findById(account.userId)
+      : null;
+
+    if (user) {
+      return this.saveSession(req, user);
+    }
+
+    user = await this.userService.create(
+      profile.email,
+      "",
+      profile.name,
+      profile.picture,
+      AuthMethod[profile.provider.toUpperCase()],
+      true
+    );
+    if (!account) {
+      await this.prismaService.account.create({
+        data: {
+          userId: user.id,
+          type: "oauth",
+          provider: profile.provider,
+          accessToken: profile.access_token,
+          refreshToken: profile.refresh_token,
+          expiresAt: profile.expires_at,
+        },
+      });
+    }
+    return this.saveSession(req, user);
   }
 
   public async login(req: Request, dto: LoginDto) {
