@@ -6,6 +6,9 @@ import { UserModule } from "./user/user.module";
 import { IS_DEV_ENV } from "libs/common/utils/is-dev-util";
 import { PrismaModule } from "./prisma/prisma.module";
 import { ProviderModule } from './auth/provider/provider.module';
+import { MailModule } from "./libs/mail/mail.module";
+import { EmailConfirmModule } from './auth/email-confirm/email-confirm.module';
+
 
 @Module({
   imports: [
@@ -17,6 +20,8 @@ import { ProviderModule } from './auth/provider/provider.module';
     AuthModule,
     UserModule,
     ProviderModule,
+    MailModule,
+    EmailConfirmModule,
   ],
 })
 export class AppModule {}

@@ -12,11 +12,10 @@ import { UserService } from "@/user/user.service";
 import { Request, Response } from "express";
 import { LoginDto } from "./dto/login.dto";
 import { verify } from "argon2";
-import { resolve } from "path";
-import { rejects } from "assert";
 import { ConfigService } from "@nestjs/config";
 import { ProviderService } from "./provider/provider.service";
 import { PrismaService } from "@/prisma/prisma.service";
+import { EmailConfirmService } from "./email-confirm/email-confirm.service";
 
 @Injectable()
 export class AuthService {
@@ -24,7 +23,8 @@ export class AuthService {
     private readonly prismaService: PrismaService,
     private readonly userService: UserService,
     private readonly configService: ConfigService,
-    private readonly providerService: ProviderService
+    private readonly providerService: ProviderService,
+    private readonly emailConfirmService: EmailConfirmService
   ) {}
 
   public async register(req: Request, dto: RegisterDto) {
@@ -44,7 +44,12 @@ export class AuthService {
       false
     );
 
-    return this.saveSession(req, newUser);
+    await this.emailConfirmService.sendVerificationToken(newUser);
+
+    return {
+      message:
+        "Вы зарегистрировались. Пожалуйста, подтвердите ваш email, через сообщение отправленная вам на почту.",
+    };
   }
 
   public async extractProfileFromCode(
@@ -110,6 +115,13 @@ export class AuthService {
       );
     }
 
+    if (!user.isVerified) {
+      await this.emailConfirmService.sendVerificationToken(user);
+      throw new UnauthorizedException(
+        "Подтвердите ваш email. Отправленный на почту"
+      );
+    }
+
     return this.saveSession(req, user);
   }
   public async logout(req: Request, res: Response): Promise<void> {
@@ -128,7 +140,7 @@ export class AuthService {
     });
   }
 
-  private async saveSession(req: Request, user: User) {
+  public async saveSession(req: Request, user: User) {
     return new Promise((resolve, reject) => {
       req.session.userId = user.id;
 
