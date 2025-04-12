@@ -11,6 +11,7 @@ import { ProviderModule } from "./provider/provider.module";
 import { getProvidersConfig } from "config/providers.config";
 import { EmailConfirmModule } from "./email-confirm/email-confirm.module";
 import { MailService } from "@/libs/mail/mail.service";
+import { TwoFactorAuthService } from "./two-factor-auth/two-factor-auth.service";
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { MailService } from "@/libs/mail/mail.service";
     forwardRef(() => EmailConfirmModule),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService],
+  providers: [AuthService, UserService, MailService, TwoFactorAuthService],
   exports: [AuthService],
 })
 export class AuthModule {}
