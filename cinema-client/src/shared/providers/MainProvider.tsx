@@ -3,6 +3,7 @@
 import { type PropsWithChildren } from "react";
 import { TanStackQueryProvider } from "./TanStackQueryProvider";
 import { ThemeProvider } from "./ThemeProvider";
+import { ToastProvider } from "./ToastProvider";
 
 export function MainProvider({ children }: PropsWithChildren<unknown>) {
     return (
@@ -13,6 +14,7 @@ export function MainProvider({ children }: PropsWithChildren<unknown>) {
                 storageKey="virtual-theme"
                 enableSystem
                 disableTransitionOnChange>
+                <ToastProvider />
                 {children}
             </ThemeProvider>
         </TanStackQueryProvider>

@@ -5,6 +5,10 @@ import { AuthWrapper } from "./AuthWrapper";
 import { RegisterSchema, TypeRegisterSchema } from "@/features/schemes";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input } from "@/shared/components";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
+import { toast } from "sonner";
 
 const initialForm: TypeRegisterSchema = {
     name: "",
@@ -14,14 +18,23 @@ const initialForm: TypeRegisterSchema = {
 }
 
 export function RegisterForm() {
+    const { theme } = useTheme();
+    const [recaptcha, setRecaptcha] = useState<string | null>();
+
+
     const form = useForm<TypeRegisterSchema>({
         resolver: zodResolver(RegisterSchema),
         defaultValues: initialForm
     })
 
     const submit = (values: TypeRegisterSchema) => {
-        console.log(values)
+        if (recaptcha) {
+            console.log(values);
+            return;
+        }
+        toast.error("Пожалуйста, завершите ReCaptcha!");
     }
+
 
     return (
         <AuthWrapper
@@ -87,6 +100,9 @@ export function RegisterForm() {
                             </FormItem>
                         )}
                     />
+                    <div className="flex justify-center">
+                        <ReCAPTCHA key={`recaptcha-${theme}`} sitekey={process.env.GOOGLE_RECAPTCHA_SITE_KEY!} onChange={setRecaptcha} theme={theme === "light" ? "light" : 'dark'} />
+                    </div>
                     <Button type="submit" >Создать аккаунт</Button>
                 </form>
             </Form>
